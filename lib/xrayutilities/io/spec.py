@@ -14,8 +14,7 @@
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 #
 # Copyright (C) 2009-2010 Eugen Wintersberger <eugen.wintersberger@desy.de>
-# Copyright (C) 2009-2021 Dominik Kriegner <dominik.kriegner@gmail.com>
-# Copyright (C) 2019 Daniel Schick <schick.daniel@gmail.com>
+# Copyright (C) 2009-2019 Dominik Kriegner <dominik.kriegner@gmail.com>
 
 """
 a class for observing a SPEC data file
@@ -57,6 +56,8 @@ SPEC_nofcols = re.compile(r"^#N")
 SPEC_colnames = re.compile(r"^#L")
 SPEC_MCAFormat = re.compile(r"^#@MCA")
 SPEC_MCAChannels = re.compile(r"^#@CHANN")
+SPEC_MCAName = re.compile(r"^#@DET")
+SPEC_MCAData = re.compile(r"^@A")
 SPEC_headerline = re.compile(r"^#")
 SPEC_scanbroken = re.compile(r"#C[a-zA-Z0-9: .]*Scan aborted")
 SPEC_scanresumed = re.compile(r"#C[a-zA-Z0-9: .]*Scan resumed")
@@ -268,7 +269,7 @@ class SPECScan(object):
             self.fid.seek(self.doffset, 0)
 
             # create dictionary to hold the data
-            if self.has_mca:
+            if False:  # self.has_mca:
                 type_desc = {"names": self.colnames + ["MCA"],
                              "formats": len(self.colnames) * [numpy.float32] +
                              [(numpy.uint32, self.mca_channels)]}
@@ -327,7 +328,10 @@ class SPECScan(object):
                     else:
                         break
 
-                if mca_counter == 0:
+                if SPEC_MCAData.match(line):
+                    continue
+
+                if True:  # mca_counter == 0:
                     # the line is a scalar data line
                     line_list = SPEC_num_value.findall(line)
                     if config.VERBOSITY >= config.DEBUG:
@@ -338,7 +342,7 @@ class SPECScan(object):
                     line_list = map(float, line_list)
 
                     # increment the MCA counter if MCA data is stored
-                    if self.has_mca:
+                    if False:  # self.has_mca:
                         mca_counter = mca_counter + 1
                         # create a temporary list for the mca data
                         mca_tmp_list = []
@@ -837,6 +841,9 @@ class SPECFile(object):
                     mca_channels = int(line_list[0])
                     mca_start = int(line_list[1])
                     mca_stop = int(line_list[2])
+
+                elif SPEC_MCAName.match(line) and scan_started:
+                    pass
 
                 elif (SPEC_scanbroken.findall(line) != [] and
                       scan_started):
